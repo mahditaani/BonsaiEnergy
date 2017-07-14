@@ -35,6 +35,8 @@ int main() {
 
     bool neut = true;
     std::string filename = "FullNeutronSimulation.root";
+//    bool neut = false;
+//    std::string filename = "FullElectronSimulation.root";
 
     //Add libraries here
 
@@ -56,7 +58,7 @@ int main() {
 
     WCSimRootTrigger* wcsimrootevent;
 
-    for (int i =1000; i<1002;i++)
+    for (int i =1000; i<1100;i++)
     {
 
 
@@ -121,7 +123,7 @@ int main() {
         }
 
         int startJ = (i-1000)*1000;
-        for (int j = startJ;j<2000;j++)
+        for (int j = startJ;j<nevent;j++)
         {
 
             if (j % 1000 == 0 && j != startJ) {break;} // Check to make sure the event
@@ -139,7 +141,7 @@ int main() {
 
             for (int index = 0; index < wcsimrootsuperevent->GetNumberOfEvents(); index++)
             {
-                wcsimrootevent = wcsimrootsuperevent->GetTrigger(index);
+                 wcsimrootevent = wcsimrootsuperevent->GetTrigger(index);
 
                         numCherDigi = wcsimrootevent->GetNcherenkovdigihits();
 
@@ -208,9 +210,9 @@ int main() {
                     recoT = bsvertex[3] ;
                     recoR = sqrt(pow(recoX-trueX, 2) + pow(recoY-trueY, 2) + pow(recoZ-trueZ, 2));
                     dWall = DWALL(recoX,recoY,400.);
-                    recoTheta = bsresult[0];
+                   recoTheta = bsresult[0];
                     recoPhi = bsresult[1];
-                    recoAlpha = bsresult[2];
+                   recoAlpha = bsresult[2];
                     recoCone = bsresult[3];
                     recoEllipticity = bsresult[4];
                     recoLikelihood = bsresult[5];
