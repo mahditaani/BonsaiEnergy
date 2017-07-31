@@ -33,10 +33,10 @@ float DWALL(float x, float y, float r)
 
 int main() {
 
-    bool neut = true;
-    std::string filename = "FullNeutronSimulation.root";
-//    bool neut = false;
-//    std::string filename = "FullElectronSimulation.root";
+//    bool neut = true;
+//    std::string filename = "FullNeutronSimulation.root";
+    bool neut = false;
+    std::string filename = "FullElectronSimulation.root";
 
     //Add libraries here
 
@@ -129,12 +129,18 @@ int main() {
             if (j % 1000 == 0 && j != startJ) {break;} // Check to make sure the event
             std::cout <<"Event : " << j<<std::endl;
 
-            float bsT[500],bsQ[500];
+            std::vector<float> bsT;
+            std::vector<float> bsQ;
             float bsvertex[4],bsresult[6];
-            float bsgood[500];
-            int bsCAB[500];
+            float bsgood[3];
+            std::vector<int> bsCAB;
             int bsnhit[1];
             int bsnsel[2];
+
+            std::vector<float> distance;
+            std::vector<float> tCorrected;
+            std::vector<float> n50Array;
+            std::vector<float> pmtX,pmtY,pmtZ;
 
             tree->GetEntry(j);
 //                      wcsimrootevent = wcsimrootsuperevent->GetTrigger(0);
@@ -185,14 +191,19 @@ int main() {
                     WCSimRootCherenkovDigiHit *wcsimrootcherenkovdigihit =
                             dynamic_cast<WCSimRootCherenkovDigiHit*>(element);
 //                        std::cout<< "HitNum" << hitNum<<"Hit Time: "<< wcsimrootcherenkovdigihit->GetT()<<std::endl;
-                    bsT[hitNum]=wcsimrootcherenkovdigihit->GetT();
-                    bsQ[hitNum]=wcsimrootcherenkovdigihit->GetQ();
-                    bsCAB[hitNum]=wcsimrootcherenkovdigihit->GetTubeId();
+                    bsT.push_back(wcsimrootcherenkovdigihit->GetT());
+                    bsQ.push_back(wcsimrootcherenkovdigihit->GetQ());
+                    bsCAB.push_back(wcsimrootcherenkovdigihit->GetTubeId());
+
+                    WCSimRootPMT pmt = geo->GetPMT(wcsimrootcherenkovdigihit->GetTubeId());
+                    pmtX.push_back(pmt.GetPosition(0));
+                    pmtY.push_back(pmt.GetPosition(1));
+                    pmtZ.push_back(pmt.GetPosition(2));
 
                 }//End loop over digitized hits
 
                 bool bonsaiStatus = true;
-                if (bonsai->BonsaiFit( bsvertex, bsresult, bsgood, bsnsel, bsnhit, bsCAB, bsT, bsQ) ==0)
+                if (bonsai->BonsaiFit( bsvertex, bsresult, bsgood, bsnsel, bsnhit, &bsCAB[0], &bsT[0], &bsQ[0]) ==0)
                 {
                     bonsaiStatus = false;
                 }
@@ -202,25 +213,47 @@ int main() {
                 if (neut && ncaps != 0 ) savedata = true;
                 if (!neut) savedata = true;
 
-                if (savedata && bonsaiStatus)
-                {
-                    recoX = bsvertex[0] ;
-                    recoY = bsvertex[1] ;
-                    recoZ = bsvertex[2] ;
-                    recoT = bsvertex[3] ;
-                    recoR = sqrt(pow(recoX-trueX, 2) + pow(recoY-trueY, 2) + pow(recoZ-trueZ, 2));
-                    dWall = DWALL(recoX,recoY,400.);
-                   recoTheta = bsresult[0];
+                if (savedata && bonsaiStatus) {
+                    recoX = bsvertex[0];
+                    recoY = bsvertex[1];
+                    recoZ = bsvertex[2];
+                    recoT = bsvertex[3];
+                    recoR = sqrt(pow(recoX - trueX, 2) + pow(recoY - trueY, 2) + pow(recoZ - trueZ, 2));
+                    dWall = DWALL(recoX, recoY, 400.);
+                    recoTheta = bsresult[0];
                     recoPhi = bsresult[1];
-                   recoAlpha = bsresult[2];
+                    recoAlpha = bsresult[2];
                     recoCone = bsresult[3];
                     recoEllipticity = bsresult[4];
                     recoLikelihood = bsresult[5];
                     recoGoodness = bsgood[2];
 //                    std::cout<<"x: "<<trueX <<" y: "<<trueY <<" z: "<<trueZ <<" rx: "<<recoX <<" ry: "<<recoY <<" rz: "<<recoZ<<std::endl;
                     deets->Fill();
-                }
 
+                    //Energy Reconstruction//
+                    for (int hitNum = 0; hitNum < numCherDigi; hitNum++) {
+                        distance.push_back(
+                         sqrt(pow(pmtX[hitNum] - bsvertex[0], 2) + pow(pmtY[hitNum] - bsvertex[1], 2) +
+                                pow(pmtZ[hitNum] - bsvertex[2], 2)));
+                        tCorrected.push_back(distance[hitNum] / 21.58333);
+
+                    }
+
+                    //sorting the tCorrected into ascending order
+                    std::sort(tCorrected.begin(), tCorrected.end());
+                    std::vector<int> n50;
+                    std::vector<int> n100;
+
+                    //look for maximum number of hits in 50 and 100 ns windows
+                    for (int hitNum = 0; hitNum < numCherDigi; hitNum++){
+                        
+
+
+
+                    }
+
+
+                }
 
             }//End loop over subevents
 
